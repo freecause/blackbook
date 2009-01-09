@@ -15,15 +15,17 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
               "messengeruser.com" => "https://login.live.com/ppsecure/post.srf",
               "msn.com"           => "https://msnia.login.live.com/ppsecure/post.srf",
               "passport.com"      => "https://login.live.com/ppsecure/post.srf",
-              "webtv.net"         => "https://login.live.com/ppsecure/post.srf" }
+              "webtv.net"         => "https://login.live.com/ppsecure/post.srf",
+            }
               
+  LIVE_DOT_COM = /live.com|live.([a-z]{2})|live.com.([a-z]{2})/
   ##
   # Matches this importer to an user's name/address
 
   def =~(options)
     return false unless options && options[:username]
     domain = username_domain(options[:username].downcase)
-    !domain.empty? && DOMAINS.keys.include?( domain ) ? true : false
+    !domain.empty? && (DOMAINS.keys.include?( domain ) or LIVE_DOT_COM =~ domain) ? true : false
   end
    
   ##
