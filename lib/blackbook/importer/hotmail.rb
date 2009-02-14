@@ -55,7 +55,7 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
         "That username and password was not accepted. Please check them and try again." )
     end
     
-    page = agent.get( page.body.scan(/http\:\/\/[^"]+/).first )
+    @first_page = agent.get( page.body.scan(/http\:\/\/[^"]+/).first )
   end
   
   ##
@@ -75,8 +75,12 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
     unless agent.cookies.find{|c| c.name == 'MSPPre' && c.value == options[:username]}
       raise( Blackbook::BadCredentialsError, "Must be authenticated to access contacts." )
     end
-
-    page = agent.get('PrintShell.aspx?type=contact')
+    page = agent.get(@first_page.iframes.first.src)
+    
+    page = agent.click(page.link_with(:text => 'Mail'))
+    page = agent.get(page.iframes.first.src)
+    page = agent.get('/mail/PrintShell.aspx?type=contact')
+        
     rows = page.search("//div[@class='ContactsPrintPane cPrintContact BorderTop']")
     rows.collect do |row|
       vals = {}
