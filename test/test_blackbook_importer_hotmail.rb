@@ -69,22 +69,40 @@ class TestBlackbookImporterHotmail < Test::Unit::TestCase
     @importer.agent.expects(:cookies).once.returns([cookie])
 
     response = {'content-type' => 'text/html'}
-    body = load_fixture('hotmail_contacts.html').join
     uri = URI.parse('http://by135w.bay135.mail.live.com/mail/')
+
+    body = load_fixture('hotmail_scrape_first_page.html').join
     page = WWW::Mechanize::Page.new(uri, response, body, code=nil, mech=nil)
-    @importer.agent.expects(:get).with('PrintShell.aspx?type=contact').once.returns(page)
+    @importer.instance_variable_set("@first_page", page)
+
+    body = load_fixture('hotmail_scrape_response_stage_1.html').join
+    page = WWW::Mechanize::Page.new(uri, response, body, code=nil, mech=nil)
+    @importer.agent.expects(:get).with('http://by118w.bay118.mail.live.com/mail/TodayLight.aspx?&ip=10.1.106.216&d=d952&mf=0&n=1587813607').once.returns(page)
+
+    body = load_fixture('hotmail_scrape_response_stage_2.html').join
+    page = WWW::Mechanize::Page.new(uri, response, body, code=nil, mech=nil)
+    @importer.agent.expects(:click).once.returns(page)
+    
+    body = load_fixture('hotmail_scrape_response_stage_3.html').join
+    page = WWW::Mechanize::Page.new(uri, response, body, code=nil, mech=nil)
+    @importer.agent.expects(:get).with('http://by118w.bay118.mail.live.com/mail/TodayLight.aspx?rru=inbox&n=650062209').once.returns(page)
+    
+    body = load_fixture('hotmail_contacts.html').join
+    page = WWW::Mechanize::Page.new(uri, response, body, code=nil, mech=nil)
+    @importer.agent.expects(:get).with('/mail/PrintShell.aspx?type=contact').once.returns(page)
 
     assert_nothing_raised do
       contacts = @importer.scrape_contacts
-      assert_equal 2, contacts.size
+      assert_equal 3, contacts.size
 
-      # Joe doesn't have a name, so we use his display name (which hotmail sets to his email)
-      assert contacts.detect{|c| c[:email] == 'joe.user@example.com'}
-      assert contacts.detect{|c| c[:name] == 'joe.user@example.com'}
+      # Joe doesn't have a name
+      assert contacts.detect{|c| c[:email] == 'joe.user@example.com' && c[:name].nil? }
 
       # Jane has both a name and an email
-      assert contacts.detect{|c| c[:email] == 'jane.user@example.com'}
-      assert contacts.detect{|c| c[:name] == 'Jane User'}
+      assert contacts.detect{|c| c[:email] == 'jane.user@example.com' && c[:name] == 'Jane User'}
+
+      # John doesn't have a name, just a Windows Live ID treated as a name
+      assert contacts.detect{|c| c[:email] == 'john.user@example.com' && c[:name].nil? }
     end
   end
 

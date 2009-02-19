@@ -12,6 +12,7 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
               "hotmail.de"        => "https://login.live.com/ppsecure/post.srf",
               "hotmail.fr"        => "https://login.live.com/ppsecure/post.srf",
               "hotmail.it"        => "https://login.live.com/ppsecure/post.srf",
+              "live.com"          => "https://login.live.com/ppsecure/post.srf",
               "messengeruser.com" => "https://login.live.com/ppsecure/post.srf",
               "msn.com"           => "https://msnia.login.live.com/ppsecure/post.srf",
               "passport.com"      => "https://login.live.com/ppsecure/post.srf",
@@ -56,7 +57,7 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
         "That username and password was not accepted. Please check them and try again." )
     end
     
-    page = agent.get( page.body.scan(/http\:\/\/[^"]+/).first )
+    @first_page = agent.get( page.body.scan(/http\:\/\/[^"]+/).first )
   end
   
   ##
@@ -76,20 +77,23 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
     unless agent.cookies.find{|c| c.name == 'MSPPre' && c.value == options[:username]}
       raise( Blackbook::BadCredentialsError, "Must be authenticated to access contacts." )
     end
-
-    page = agent.get('PrintShell.aspx?type=contact')
+    page = agent.get(@first_page.iframes.first.src)
+    
+    page = agent.click(page.link_with(:text => 'Mail'))
+    page = agent.get(page.iframes.first.src)
+    page = agent.get('/mail/PrintShell.aspx?type=contact')
+        
     rows = page.search("//div[@class='ContactsPrintPane cPrintContact BorderTop']")
     rows.collect do |row|
-      name = row.search("//div[@class='cDisplayName']").first.innerText.strip
-      
       vals = {}
-      row.search("//table/tr").each do |pair|
-        key = pair.search("/td[@class='TextAlignRight Label']").first.innerText.strip
-        val = pair.search("/td[@class='Value']").first.innerText.strip
+      row.search("table/tr").each do |pair|
+        key = pair.search("td[@class='TextAlignRight Label']").first.inner_text.strip rescue nil
+        next if key.nil?
+        val = pair.search("td[@class='Value']").first.inner_text.strip
         vals[key.to_sym] = val
       end
-      vals[:name] = name
-      vals[:email] = (vals['Personal e-mail:'.to_sym] || vals['Work e-mail:'.to_sym]).split(' ').first rescue ''
+      vals[:name] = vals['Name:'.to_sym] rescue ''
+      vals[:email] = (vals['Personal e-mail:'.to_sym] || vals['Work e-mail:'.to_sym] || vals['Windows Live ID:'.to_sym]).split(' ').first rescue ''
       vals
     end
   end

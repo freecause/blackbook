@@ -1,0 +1,77 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+
+
+<html style="overflow:hidden;">
+    
+<head>
+    <base href="by118w.bay118.mail.live.com" />
+    <script type="text/javascript">
+        var mailDomain = "mail.live.com";
+
+        //
+        document.domain = "live.com";
+        if( window.top != self )
+        {
+            var hostname = "";
+            try
+            {
+                
+                hostname = window.top.location.hostname;
+            }
+            catch(e)
+            {
+            }
+
+            if((hostname.indexOf(mailDomain) + mailDomain.length) == hostname.length )
+            {
+                // 
+                self.location.href = 'http\x3a\x2f\x2fby118w.bay118.mail.live.com\x2fmail\x2fTodayLight.aspx\x3frru\x3dinbox\x26n\x3d650062209';
+            }
+            else
+            {
+                // 
+                window.top.location.href = self.location.href;
+            }
+        }
+
+
+
+        function uiFrameLoad()
+        {
+            //
+            try
+            {
+                document.title = window.frames[0].document.title;
+                
+            }
+            catch(e)
+            {
+            }
+        }
+        function beforeUnloadHandler()
+        {
+            try
+            {
+                var frameUrl = document.getElementById("UIFrame").contentWindow.document.location.href;
+                document.cookie = "afu=" + escape(frameUrl) + ";path=/;domain=.mail.live.com;";
+            }
+            catch(e)
+            {
+            }
+        }
+    </script>
+</head>
+<body style="padding:0;margin:0;overflow:visible;height:100%;width:100%;position:absolute" onbeforeunload="beforeUnloadHandler()">
+<div id="appDiv" style="position:absolute;height:100%;width:100%">
+    <iframe id="UIFrame" onload="uiFrameLoad()" src="http&#58;&#47;&#47;by118w.bay118.mail.live.com&#47;mail&#47;TodayLight.aspx&#63;rru&#61;inbox&#38;n&#61;650062209" 
+        frameborder="0" 
+        width="100%" 
+        height="100%" 
+        marginheight="0" 
+        marginwidth="0">
+    </iframe>
+                
+</div>
+</body>
+</html>

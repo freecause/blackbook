@@ -23,8 +23,10 @@ class Blackbook::Importer::Yahoo < Blackbook::Importer::PageScraper
     form.passwd = options[:password]
     page = agent.submit(form, form.buttons.first)
     
-    # Check for login success
-    raise( Blackbook::BadCredentialsError, "That username and password was not accepted. Please check them and try again." ) if page.body =~ /Invalid ID or password./
+    if page.body =~ /Invalid ID or password./ || page.body =~ /This ID is not yet taken./
+      raise Blackbook::BadCredentialsError, "That username and password was not accepted. Please check them and try again."
+    end
+    
     true
   end
   

@@ -92,7 +92,7 @@ class TestBlackbookImporterGmail < Test::Unit::TestCase
       @importer.scrape_contacts
     end
   end
-
+  
   def test_scrape_contacts
     cookie = WWW::Mechanize::Cookie.new('GAUSR', 'mail:user@gmail.com')
     @importer.agent.expects(:cookies).once.returns([cookie])

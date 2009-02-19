@@ -23,7 +23,7 @@ class Blackbook::Importer::Aol < Blackbook::Importer::PageScraper
     # require 'ruby-debug'; debugger
     page = agent.get( 'http://webmail.aol.com/' )
 
-    form = page.forms.name('AOLLoginForm').first
+    form = page.forms.find{|form| form.name == 'AOLLoginForm'}
     form.loginId = options[:username].split('@').first # Drop the domain
     form.password = options[:password]
     page = agent.submit(form, form.buttons.first)
@@ -56,7 +56,7 @@ class Blackbook::Importer::Aol < Blackbook::Importer::PageScraper
   # and a known uri that hosts their contact service. An array of hashes with
   # :name and :email keys is returned.
 
-  def scrape_contacts
+  def scrape_contacts    
     unless auth_cookie = agent.cookies.find{|c| c.name =~ /^Auth/}
       raise( Blackbook::BadCredentialsError, "Must be authenticated to access contacts." )
     end
@@ -75,14 +75,24 @@ class Blackbook::Importer::Aol < Blackbook::Importer::PageScraper
     page = agent.get uri.to_s
 
     # Grab all the contacts
-    names = page.body.scan( /<span class="fullName">([^<]+)<\/span>/ ).flatten
-    emails = page.body.scan( /<span>Email 1:<\/span> <span>([^<]+)<\/span>/ ).flatten
-    (0...[names.size,emails.size].max).collect do |i|
-      {
-        :name => names[i],
-        :email => emails[i]
-      }
+    rows = page.search("table tr")
+    name, email = nil, nil
+    
+    results = []
+    rows.each do |row|
+      new_name = row.search("span[@class='fullName']").inner_text.strip
+      if name.blank? || !new_name.blank?
+        name = new_name
+      end
+      next if name.blank?
+    
+      email = row.search("td[@class='sectionContent'] span:last").inner_text.strip
+      next if email.blank?
+    
+      results << {:name => name, :email => email}
+      name, email = nil, nil
     end
+    results
   end
   
   Blackbook.register :aol, self

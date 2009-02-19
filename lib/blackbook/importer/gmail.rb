@@ -5,9 +5,10 @@ require 'blackbook/importer/page_scraper'
 
 class Blackbook::Importer::Gmail < Blackbook::Importer::PageScraper
 
+  RETRY_THRESHOLD = 5
   ##
   # Matches this importer to an user's name/address
-
+  
   def =~(options = {})
     options && options[:username] =~ /@gmail.com$/i ? true : false
   end
@@ -46,7 +47,14 @@ class Blackbook::Importer::Gmail < Blackbook::Importer::PageScraper
     end
     
     page = agent.get('http://mail.google.com/mail/h/?v=cl&pnl=a')
-    contact_rows = page.search("input[@name='c']/../..")
+    title = page.search("//title").inner_text
+    if title == 'Redirecting'
+      redirect_text = page.search('//meta').first.attributes['content'].inner_text
+      url = redirect_text.match(/url='(http.*)'/i)[1]
+      page = agent.get(url)
+    end
+    
+    contact_rows = page.search("//input[@name='c']/../..")
     contact_rows.collect do |row|
       columns = row/"td"
       email = columns[2].inner_html.gsub( /(\n|&nbsp;)/, '' ) # email
@@ -55,7 +63,7 @@ class Blackbook::Importer::Gmail < Blackbook::Importer::PageScraper
       unless clean_email.empty?
         columns = row/"td"
         { 
-          :name  => ( columns[1] / "b" ).inner_html, # name
+          :name  => ( columns[1] / "b" ).inner_text, # name
           :email => clean_email
         } 
       end

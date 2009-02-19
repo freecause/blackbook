@@ -45,12 +45,6 @@ class TestBlackbookImporterAol < Test::Unit::TestCase
 
     body = load_fixture('aol_login_response_stage_4.html').join
     page = WWW::Mechanize::Page.new(uri=nil, response, body, code=nil, mech=nil)
-    @importer.agent.expects(:get).with(
-      'http://webmail.aol.com/_cqr/LoginSuccess.aspx?sitedomain=sns.webmail.aol.com&authLev=2&siteState=ver%3A2%7Cac%3AWS%7Cat%3ASNS%7Cld%3Awebmail.aol.com%7Cuv%3AAOL%7Clc%3Aen-us&lang=en&locale=us&uitype=std&mcAuth=%2Fblackbookauthtest%3D%3D'
-    ).once.returns(page)
-
-    body = load_fixture('aol_login_response_stage_5.html').join
-    page = WWW::Mechanize::Page.new(uri=nil, response, body, code=nil, mech=nil)
     @importer.agent.expects(:get).with('/31361/aim/en-us/Lite/Today.aspx').once.returns(page)
 
     assert_nothing_raised do
@@ -107,6 +101,7 @@ class TestBlackbookImporterAol < Test::Unit::TestCase
       assert contacts.detect{|c| c[:name] == 'Joe User'}
       assert contacts.detect{|c| c[:email] == 'jane.user@example.com'}
       assert contacts.detect{|c| c[:name] == 'Jane User'}
+      assert contacts.detect{|c| c[:name] == 'NoEmail Dude'} == nil
     end
   end
 

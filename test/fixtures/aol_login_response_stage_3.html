@@ -1,61 +1,48 @@
+---------------------------------
 
+<html>
+<head>
+<style type="text/css">
+body {
+	padding : 0;
+	margin : 0;
+	height : 100%;
+	background-image: url(http://o.aolcdn.com/cdn.webmail.aol.com/31361/aim/en-us/images/progressAnimation.gif);
+	background-repeat: no-repeat;
+	background-position: center;
+}
+</style>
+</head>
+<body>
 
+<script type="text/javascript">
+var gPreferredHost = "webmail.aol.com";
+var qFailoverHost = "";
+var gTargetHost = null;
+var gHostCheckPath = "/31361/aim/en-us/common/HostCheck.aspx?from=webmail.aol.com:30166&at=11/16/2007 5:05:06 PM&siteState=ver%3a2%7cac%3aWS%7cat%3aSNS%7cld%3awebmail.aol.com%7cuv%3aAOL%7clc%3aen-us";
+var gSuccessPath = "/31361/aim/en-us/Lite/Today.aspx";
+var gErrorURL = "http://webmail.aol.com/31361/aim/en-us/common/error.aspx?code=C0FE1801&ssm=true&chm=true&ph=webmail.aol.com&reportid=30166-webmail-20071116-170506&rt=STANDARD&from=webmail.aol.com:30166&at=11/16/2007 5:05:06 PM&siteState=ver%3a2%7cac%3aWS%7cat%3aSNS%7cld%3awebmail.aol.com%7cuv%3aAOL%7clc%3aen-us&src=LS";
+</script>
 
+<script language="javascript">
+if (gPreferredHost != "")
+	document.write("<script language='javascript' src='http://" + gPreferredHost + gHostCheckPath + "'><\/script>");
+</script>
 
+<script language="javascript">
+if (gTargetHost == null && qFailoverHost != "")
+	document.write("<script language='javascript' src='http://" + qFailoverHost + gHostCheckPath + "'><\/script>");
+</script>
 
+<script language="javascript">
+if (gTargetHost != null)
+	window.location.replace("http://" + gTargetHost + gSuccessPath);
+else
+	window.location.replace(gErrorURL);
+</script>
 
+<!-- Hi Ulrich! -->
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<html><head><title>Screen Name Service</title></head>
-<SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript"><!--
-    var xdomError = false;
-    function snsRedir(newloc) {
-	var appVer = navigator.appVersion.substring(0,1); var uagent = navigator.userAgent.toLowerCase();
-	if (appVer == '2' || (appVer == '3' && uagent.indexOf('msie') != -1)) {  parent.location = newloc;}
-	else if ( uagent.indexOf('safari') != -1 ) { top.location.href = newloc;}
-	else { parent.location.replace(newloc); }
-    }
-
-    function snsInFrameRedir(newloc) {	
-	    if (navigator.appVersion.substring(0,1) == '2' || (navigator.appVersion.substring(0,1) == '3' && navigator.userAgent.indexOf('MSIE') != -1)) {
-		if( self != top ) document.location = newloc;
-		else parent.location = newloc;
-	    } else {
-		if( self != top ) document.location.replace(newloc);
-		else parent.location.replace(newloc);
-	    }
-    }
-    
-    function snsSubForm(formName, doPOST, redirUrl) {    
-	( doPOST== "true")?  eval ('document.' + formName + '.submit()'): snsRedir(redirUrl);   
-    }
-    function checkErrorAndSubmitForm( formName, doPOST, redirUrl){
-    
-        if( !xdomError ) {
-        
-           snsSubForm( formName, doPOST, redirUrl);
-        
-        }
-        
-    }
-//--></SCRIPT>
-
-
-
-<body onLoad="checkErrorAndSubmitForm('loginForm', 'false', 'http://webmail.aol.com/_cqr/LoginSuccess.aspx?sitedomain=sns.webmail.aol.com&authLev=2&siteState=ver%3A2%7Cac%3AWS%7Cat%3ASNS%7Cld%3Awebmail.aol.com%7Cuv%3AAOL%7Clc%3Aen-us&lang=en&locale=us&uitype=std&mcAuth=%2Fblackbookauthtest%3D%3D');">
-    
-    
-</body></html>        
+</body>
+</html>
+---------------------------------

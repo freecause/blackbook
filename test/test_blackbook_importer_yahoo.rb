@@ -59,6 +59,22 @@ class TestBlackbookImporterYahoo < Test::Unit::TestCase
       @importer.login
     end
   end
+  
+  def test_no_such_user
+    response = {'content-type' => 'text/html'}
+
+    body = load_fixture('yahoo_login_response_stage_1.html').join
+    page = WWW::Mechanize::Page.new(uri=nil, response, body, code=nil, mech=nil)
+    @importer.agent.expects(:get).with('https://login.yahoo.com/config/login_verify2?').once.returns(page)
+
+    body = load_fixture('yahoo_no_user_response_stage_2.html').join
+    page = WWW::Mechanize::Page.new(uri=nil, response, body, code=nil, mech=nil)
+    @importer.agent.expects(:submit).once.returns(page)
+
+    assert_raises(Blackbook::BadCredentialsError) do
+      @importer.login
+    end
+  end
 
   def test_scrape_contacts_raises_badcredentialerror_when_not_logged_in
     response = {'content-type' => 'text/html'}
