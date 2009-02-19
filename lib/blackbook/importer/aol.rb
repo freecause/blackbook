@@ -75,24 +75,14 @@ class Blackbook::Importer::Aol < Blackbook::Importer::PageScraper
     page = agent.get uri.to_s
 
     # Grab all the contacts
-    rows = page.search("table tr")
-    name, email = nil, nil
-    
-    results = []
-    rows.each do |row|
-      new_name = row.search("span[@class='fullName']").inner_text.strip
-      if name.blank? || !new_name.blank?
-        name = new_name
-      end
-      next if name.blank?
-    
-      email = row.search("td[@class='sectionContent'] span:last").inner_text.strip
-      next if email.blank?
-    
-      results << {:name => name, :email => email}
-      name, email = nil, nil
+    names = page.body.scan( /<span class="fullName">([^<]+)<\/span>/ ).flatten
+    emails = page.body.scan( /<span>Email 1:<\/span> <span>([^<]+)<\/span>/ ).flatten
+    (0...[names.size,emails.size].max).collect do |i|
+      {
+        :name => names[i],
+        :email => emails[i]
+      }
     end
-    results
   end
   
   Blackbook.register :aol, self
