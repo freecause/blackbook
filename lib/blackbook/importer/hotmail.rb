@@ -77,7 +77,14 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
     unless agent.cookies.find{|c| c.name == 'MSPPre' && c.value == options[:username]}
       raise( Blackbook::BadCredentialsError, "Must be authenticated to access contacts." )
     end
-    page = agent.get(@first_page.iframes.first.src)
+    
+    if interstitial_form = @first_page.forms.detect { |f| f.name == 'MessageAtLoginForm' }
+      if button = interstitial_form.buttons.detect { |b| b.name == 'TakeMeToInbox' }
+        page = agent.submit( interstitial_form, button )
+      end
+    else
+      page = agent.get(@first_page.iframes.first.src)
+    end
     
     page = agent.click(page.link_with(:text => 'Mail'))
     page = agent.get(page.iframes.first.src)
@@ -126,5 +133,5 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
     username.to_s.split('@').last
   end
   
-  Blackbook.register(:hotmail, self)
+  # Blackbook.register(:hotmail, self)
 end
