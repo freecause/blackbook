@@ -110,4 +110,27 @@ class TestBlackbookImporterYahoo < Test::Unit::TestCase
     end
   end
 
+
+  def test_scrape_contacts_with_invalid_regex_character_in_email
+    response = {'content-type' => 'text/html'}
+    body = load_fixture('yahoo_contacts_stage_1.html').join
+    page = WWW::Mechanize::Page.new(uri=nil, response, body, code=nil, mech=nil)
+    @importer.agent.expects(:get).with('http://address.yahoo.com/?1=&VPC=import_export'
+      ).once.returns(page)
+
+    response = {'content-type' => 'text/csv; charset=UTF-8'}
+    body = load_fixture('yahoo_contacts.csv').join
+    body.gsub!(/joe\.user\@example\.com/, "joe+user@example.com")
+    page = WWW::Mechanize::File.new(uri=nil, response, body, code=nil)
+    @importer.agent.expects(:submit).once.returns(page)
+
+    assert_nothing_raised do
+      contacts = @importer.scrape_contacts
+      assert_equal 2, contacts.size
+      assert contacts.detect{|c| c[:email] == 'joe+user@example.com'}
+      assert contacts.detect{|c| c[:name] == 'Joe User'}
+      assert contacts.detect{|c| c[:email] == 'jane.user@example.com'}
+      assert contacts.detect{|c| c[:name] == 'Jane User'}
+    end
+  end
 end
