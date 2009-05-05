@@ -16,17 +16,15 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
               "messengeruser.com" => "https://login.live.com/ppsecure/post.srf",
               "msn.com"           => "https://msnia.login.live.com/ppsecure/post.srf",
               "passport.com"      => "https://login.live.com/ppsecure/post.srf",
-              "webtv.net"         => "https://login.live.com/ppsecure/post.srf",
-            }
+              "webtv.net"         => "https://login.live.com/ppsecure/post.srf" }
               
-  LIVE_DOT_COM = /live.com|live.([a-z]{2})|live.com.([a-z]{2})/
   ##
   # Matches this importer to an user's name/address
 
   def =~(options)
     return false unless options && options[:username]
     domain = username_domain(options[:username].downcase)
-    !domain.empty? && (DOMAINS.keys.include?( domain ) or LIVE_DOT_COM =~ domain) ? true : false
+    !domain.empty? && DOMAINS.keys.include?( domain ) ? true : false
   end
    
   ##
@@ -78,30 +76,30 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
       raise( Blackbook::BadCredentialsError, "Must be authenticated to access contacts." )
     end
     
-    if interstitial_form = @first_page.forms.detect { |f| f.name == 'MessageAtLoginForm' }
-      if button = interstitial_form.buttons.detect { |b| b.name == 'TakeMeToInbox' }
-        page = agent.submit( interstitial_form, button )
+    page = agent.get('http://mail.live.com/')
+    
+    if page.iframes.detect { |f| f.src =~ /\/mail\/TodayLight.aspx/ }
+      page = agent.get( page.iframes.first.src )
+      
+      if button = page.forms.first.buttons.detect { |b| b.name == 'TakeMeToInbox' }
+        page = agent.submit( page.forms.first, button )
       end
-    else
-      page = agent.get(@first_page.iframes.first.src)
     end
     
-    page = agent.click(page.link_with(:text => 'Mail'))
-    page = agent.get(page.iframes.first.src)
-    page = agent.get('/mail/PrintShell.aspx?type=contact')
-        
-    rows = page.search("//div[@class='ContactsPrintPane cPrintContact BorderTop']")
-    rows.collect do |row|
-      vals = {}
-      row.search("table/tr").each do |pair|
-        key = pair.search("td[@class='TextAlignRight Label']").first.inner_text.strip rescue nil
-        next if key.nil?
-        val = pair.search("td[@class='Value']").first.inner_text.strip
-        vals[key.to_sym] = val
-      end
-      vals[:name] = vals['Name:'.to_sym] rescue ''
-      vals[:email] = (vals['Personal e-mail:'.to_sym] || vals['Work e-mail:'.to_sym] || vals['Windows Live ID:'.to_sym]).split(' ').first rescue ''
-      vals
+    page = page.link_with(:text => 'Contact list').click
+    
+    contacts = parse_contacts(page.body)
+    while link = page.link_with(:text => 'Next page')
+      page = link.click
+      contacts += parse_contacts(page.body)
+    end
+    
+    contacts
+  end
+  
+  def parse_contacts(source)
+    source.scan(/ICc.*\:\[.*?,.*?,\['ct'\],'(.*?)',.*?,.*?,'(.*?)',.*\]/).collect do |name, email|
+      { :name => (name =~ /\\x26\\x2364\\x3b/ ? nil : name), :email => email.gsub(/\\x40/, '@') }
     end
   end
   
@@ -133,5 +131,5 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
     username.to_s.split('@').last
   end
   
-  # Blackbook.register(:hotmail, self)
+  Blackbook.register(:hotmail, self)
 end
