@@ -20,7 +20,6 @@ class Blackbook::Importer::Aol < Blackbook::Importer::PageScraper
   # - Get the URL from *another* javascript redirect
 
   def login
-    # require 'ruby-debug'; debugger
     page = agent.get( 'http://webmail.aol.com/' )
 
     form = page.forms.find{|form| form.name == 'AOLLoginForm'}
@@ -31,15 +30,9 @@ class Blackbook::Importer::Aol < Blackbook::Importer::PageScraper
     raise( Blackbook::BadCredentialsError, "That username and password was not accepted. Please check them and try again." ) if page.body =~ /Invalid Screen Name or Password. Please try again./
 
     # aol bumps to a wait page while logging in.  if we can't scrape out the js then its a bad login
-    begin
-      wait_url = page.body.scan(/onLoad="checkError[^\)]+/).first.scan(/'([^']+)'/).last.first
-    rescue
-      sleep 0.1
-    else
-      page = agent.get wait_url
-    end
-
-    base_uri = page.body.scan(/^var gSuccessPath = \"(.+)\";/).first.first
+    extractor = proc { |var_name| page.body.scan(/var\s*#{var_name}\s*=\s*\"(.*?)\"\s*;/).first.first }
+      
+    base_uri = extractor.call( 'gSuccessPath' )
     raise( Blackbook::BadCredentialsError, "You do not appear to be signed in." ) unless base_uri
     page = agent.get base_uri
   end
