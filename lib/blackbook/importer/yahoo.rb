@@ -10,11 +10,7 @@ class Blackbook::Importer::Yahoo < Blackbook::Importer::PageScraper
   # Matches this importer to an user's name/address
 
   def =~(options = {})
-<<<<<<< HEAD:lib/blackbook/importer/yahoo.rb
     options && options[:username] =~ /@yahoo.co(m|\.uk)$/i ? true : false
-=======
-    options && options[:username] =~ /@kimo.com|@y7mail.com|@ymail.com|@rocketmail.com|@yahoo.(com|.*)$/i ? true : false
->>>>>>> cyx/master:lib/blackbook/importer/yahoo.rb
   end
   
   ##
