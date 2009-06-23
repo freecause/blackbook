@@ -75,24 +75,31 @@ class Blackbook::Importer::Hotmail < Blackbook::Importer::PageScraper
     unless agent.cookies.find{|c| c.name == 'MSPPre' && c.value == options[:username]}
       raise( Blackbook::BadCredentialsError, "Must be authenticated to access contacts." )
     end
-    page = agent.get(@first_page.iframes.first.src)
+
+    page = agent.get('http://mail.live.com/')
     
-    page = agent.click(page.link_with(:text => 'Mail'))
-    page = agent.get(page.iframes.first.src)
-    page = agent.get('/mail/PrintShell.aspx?type=contact')
-        
-    rows = page.search("//div[@class='ContactsPrintPane cPrintContact BorderTop']")
-    rows.collect do |row|
-      vals = {}
-      row.search("table/tr").each do |pair|
-        key = pair.search("td[@class='TextAlignRight Label']").first.inner_text.strip rescue nil
-        next if key.nil?
-        val = pair.search("td[@class='Value']").first.inner_text.strip
-        vals[key.to_sym] = val
+    if page.iframes.detect { |f| f.src =~ /\/mail\/TodayLight.aspx/ }
+      page = agent.get( page.iframes.first.src )
+      
+      if button = page.forms.first.buttons.detect { |b| b.name == 'TakeMeToInbox' }
+        page = agent.submit( page.forms.first, button )
       end
-      vals[:name] = vals['Name:'.to_sym] rescue ''
-      vals[:email] = (vals['Personal e-mail:'.to_sym] || vals['Work e-mail:'.to_sym] || vals['Windows Live ID:'.to_sym]).split(' ').first rescue ''
-      vals
+    end
+    
+    page = page.link_with(:text => 'Contact list').click
+    
+    contacts = parse_contacts(page.body)
+    while link = page.link_with(:text => 'Next page')
+      page = link.click
+      contacts += parse_contacts(page.body)
+    end
+    
+    contacts
+  end
+  
+  def parse_contacts(source)
+    source.scan(/ICc.*\:\[.*?,.*?,\['ct'\],'(.*?)',.*?,.*?,'(.*?)',.*\]/).collect do |name, email|
+      { :name => (name =~ /\\x26\\x2364\\x3b/ ? nil : name), :email => email.gsub(/\\x40/, '@') }
     end
   end
   

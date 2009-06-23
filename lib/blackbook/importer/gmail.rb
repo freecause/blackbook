@@ -13,10 +13,19 @@ class Blackbook::Importer::Gmail < Blackbook::Importer::PageScraper
     options && options[:username] =~ /@(gmail|googlemail).com$/i ? true : false
   end
   
+  def import(*args)
+    # GMail depends on Hpricot for some reason...
+    parser = WWW::Mechanize.html_parser
+    WWW::Mechanize.html_parser = Hpricot
+    returning super do
+      WWW::Mechanize.html_parser = parser
+    end
+  end
+  
   ##
   # login to gmail
 
-  def login
+  def login    
     page = agent.get('http://mail.google.com/mail/')
     form = page.forms.first
     form.Email = options[:username]
@@ -40,9 +49,10 @@ class Blackbook::Importer::Gmail < Blackbook::Importer::PageScraper
   ##
   # scrape gmail contacts for this importer
 
-  def scrape_contacts
-    unless agent.cookies.find{|c| c.name == 'GAUSR' && 
-                           (c.value.include? "mail:#{options[:username]}")}
+  def scrape_contacts    
+    unless agent.cookies.find { |c| 
+        c.name == 'GAUSR' && c.value.match(/mail(.*?):#{options[:username]}/) 
+      }
       raise( Blackbook::BadCredentialsError, "Must be authenticated to access contacts." )
     end
     
@@ -63,7 +73,7 @@ class Blackbook::Importer::Gmail < Blackbook::Importer::PageScraper
       unless clean_email.empty?
         columns = row/"td"
         { 
-          :name  => ( columns[1] / "b" ).inner_text, # name
+          :name  => ( columns[1] / "b" / "a" ).inner_html, # name
           :email => clean_email
         } 
       end

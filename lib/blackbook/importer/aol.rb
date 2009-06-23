@@ -34,7 +34,10 @@ class Blackbook::Importer::Aol < Blackbook::Importer::PageScraper
       raise( Blackbook::LegacyAccount, "Your AOL account is not setup for WebMail. Please signup: http://webmail.aol.com")
     end
 
-    base_uri = page.body.scan(/^var gSuccessPath = \"(.+)\";/).first.first
+    # aol bumps to a wait page while logging in.  if we can't scrape out the js then its a bad login
+    extractor = proc { |var_name| page.body.scan(/var\s*#{var_name}\s*=\s*\"(.*?)\"\s*;/).first.first }
+      
+    base_uri = extractor.call( 'gSuccessPath' )
     raise( Blackbook::BadCredentialsError, "You do not appear to be signed in." ) unless base_uri
     page = agent.get base_uri
   end
@@ -70,24 +73,14 @@ class Blackbook::Importer::Aol < Blackbook::Importer::PageScraper
     page = agent.get uri.to_s
 
     # Grab all the contacts
-    rows = page.search("table tr")
-    name, email = nil, nil
-    
-    results = []
-    rows.each do |row|
-      new_name = row.search("span[@class='fullName']").inner_text.strip
-      if name.blank? || !new_name.blank?
-        name = new_name
-      end
-      next if name.blank?
-    
-      email = row.search("td[@class='sectionContent'] span:last").inner_text.strip
-      next if email.blank?
-    
-      results << {:name => name, :email => email}
-      name, email = nil, nil
+    names = page.body.scan( /<span class="fullName">([^<]+)<\/span>/ ).flatten
+    emails = page.body.scan( /<span>Email 1:<\/span> <span>([^<]+)<\/span>/ ).flatten
+    (0...[names.size,emails.size].max).collect do |i|
+      {
+        :name => names[i],
+        :email => emails[i]
+      }
     end
-    results
   end
   
   Blackbook.register :aol, self
