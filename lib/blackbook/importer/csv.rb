@@ -59,7 +59,7 @@ class Blackbook::Importer::Csv < Blackbook::Importer::Base
         columns << :email
       end
     end
-    tags.each{|v| columns << v.strip.to_sym}
+    tags.each{|v| columns << v.gsub(/\0/,"").strip.to_sym}
     columns
   end
   
